@@ -1,0 +1,18 @@
+version: "2"
+sql:
+  - engine: "mysql"
+    queries: "database/query.sql"
+    schema: "database/migrations"
+    gen:
+      go:
+        package: "database"
+        out: "database"
+        # emit_pointers_for_null_types: true
+        emit_json_tags: true
+        overrides:
+        - db_type: "varchar"
+          nullable: true
+          go_type:
+            import: "github.com/guregu/null/v6"
+            package: "null"
+            type: "String"

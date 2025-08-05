@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// import "google/protobuf/empty.proto";
+
+option go_package = "hcorreia/live-blog/blog";
+
+package blog;
+
+service BlogService {
+    rpc ListPosts(Params) returns (PostListResponse);
+}
+
+message Params {
+    int32 page = 1;
+}
+
+message PostResponse {
+    int32 ID = 1;
+    string Title = 2;
+    string Image = 3;
+    string Content = 4;
+    string CreatedAt = 5;
+    string UpdatedAt = 6;
+}
+
+message PostListResponse {
+    repeated PostResponse posts = 1;
+}
+
+
+// type Post struct {
+// 	ID        int32       `json:"id"`
+// 	Title     string      `json:"title"`
+// 	Image     null.String `json:"image"`
+// 	Content   string      `json:"content"`
+// 	CreatedAt time.Time   `json:"created_at"`
+// 	UpdatedAt time.Time   `json:"updated_at"`
+// }
