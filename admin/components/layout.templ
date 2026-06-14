@@ -1,0 +1,42 @@
+package components
+
+
+templ layout() {
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    </head>
+    <body>
+        @header()
+
+        <div id="main">
+            { children... }
+        </div>
+
+        @footer()
+    </body>
+    </html>
+}
+
+templ header() {
+    <div id="header" data-style={ ctx.Value("color").(string) }>
+        Header { GetTheme(ctx).SiteName }
+
+        <hr />
+
+        <div id="menu">
+            <a href={ templ.URL("/posts/") }>Posts</a>
+        </div>
+    </div>
+}
+
+templ footer() {
+    <div id="footer">
+        <hr />
+
+        Footer
+    </div>
+}

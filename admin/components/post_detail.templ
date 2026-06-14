@@ -1,0 +1,26 @@
+package components
+
+import "fmt"
+import pb "hcorreia/live-blog/common/blog"
+
+templ PostDetail(post *pb.PostResponse) {
+    @layout() {
+        <h1>Post:</h1>
+
+        <p><strong>ID:</strong> { post.ID }</p>
+        <p><strong>Title:</strong> { post.Title }</p>
+        <p>
+            <strong>Content:</strong><br />
+            { post.Content }
+        </p>
+        <p><strong>UpdatedAt:</strong> { post.UpdatedAt }</p>
+
+        <p>
+            <a
+                href={ templ.URL(fmt.Sprintf("/posts/%d/edit/", post.ID)) }
+            >
+                Edit
+            </a>
+        </p>
+    }
+}

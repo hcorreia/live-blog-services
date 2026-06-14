@@ -1,0 +1,56 @@
+package components
+
+import "fmt"
+import pb "hcorreia/live-blog/common/blog"
+
+templ PostForm(post *pb.PostResponse, data map[string]string, errors map[string]string) {
+    @layout() {
+        <h1>Post:</h1>
+
+        <form
+            if post.ID != 0 {
+                method="POST"
+                action={ templ.URL(fmt.Sprintf("/posts/%d/", post.ID)) }
+            } else {
+                method="POST"
+                action={ templ.URL("/posts/") }
+            }
+        >
+            if errors["__FORM__"] != "" {
+                <p class="error">{ errors["__FORM__"] }</p>
+            }
+
+            <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" value={ data["Title"] } required>
+                if errors["Title"] != "" {
+                    <span class="error">{ errors["Title"] }</span>
+                }
+            </div>
+            <div>
+                <label for="image">Image:</label>
+                <input type="text" id="image" name="image" value={ data["Image"] } required>
+                if errors["Image"] != "" {
+                    <span class="error">{ errors["Image"] }</span>
+                }
+            </div>
+            <div>
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" required>{ data["Content"] }</textarea>
+                if errors["Content"] != "" {
+                    <span class="error">{ errors["Content"] }</span>
+                }
+            </div>
+
+            <div>
+                <button type="submit">
+                    if post.ID != 0 {
+                        Update
+                    } else {
+                        Create
+                    }
+                </button>
+            </div>
+        </form>
+    }
+}

@@ -1,0 +1,89 @@
+package components
+
+import "fmt"
+import pb "hcorreia/live-blog/common/blog"
+
+templ PostList(posts []*pb.PostResponse) {
+    @layout() {
+        <h1>Posts:</h1>
+
+        <div>
+            <a
+                href={ templ.URL(fmt.Sprintf("/posts/new/")) }
+            >
+                Create Post
+            </a>
+        </div>
+
+	    <table width="100%">
+            <thead style={"text-align: left;"}>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>UpdatedAt</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+            for _, item := range posts {
+                <tr>
+                    <td>{ item.ID }</td>
+                    <td>
+                        <a
+                            href={ templ.URL(fmt.Sprintf("/posts/%d/", item.ID)) }
+                        >
+                            { item.Title }
+                        </a>
+                    </td>
+                    <td>{ item.UpdatedAt }</td>
+                    <td>
+                        <a
+                            href={ templ.URL(fmt.Sprintf("/posts/%d/", item.ID)) }
+                        >
+                            View
+                        </a>
+                        |
+                        <a
+                            href={ templ.URL(fmt.Sprintf("/posts/%d/edit/", item.ID)) }
+                        >
+                            Edit
+                        </a>
+                        |
+                        <a
+
+                            href={ templ.URL(fmt.Sprintf("/posts/%d/delete/", item.ID)) }
+                            onclick={ deletePost(
+                                templ.JSExpression("event"),
+                                fmt.Sprintf("post-id-%d-delete-button", item.ID),
+                                fmt.Sprintf("Are you sure you want to delete the post '%s'?", item.Title),
+                            ) }
+                        >
+                            Delete
+                        </a>
+                        <form
+                            method="POST"
+                            action={ templ.URL(fmt.Sprintf("/posts/%d/delete/", item.ID)) }
+                            style={"display: none;"}>
+                            <button
+                                id={ fmt.Sprintf("post-id-%d-delete-button", item.ID) }
+                                type="submit"
+                                style={"background: none; border: none; padding: 0; color: #007BFF; cursor: pointer;"}
+                            >
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+}
+
+script deletePost(event any, id string, msg string) {
+    event.preventDefault()
+
+    if (confirm(msg)) {
+        document.getElementById(id).click()
+    }
+}

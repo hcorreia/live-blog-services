@@ -16,6 +16,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/guregu/null/v6"
 
 	"hcorreia/live-blog/blog-service/database"
 	"hcorreia/live-blog/common"
@@ -33,8 +34,8 @@ func NewServer(db *sql.DB) *server {
 	}
 }
 
-func (s *server) ListPosts(_ context.Context, in *pb.Params) (*pb.PostListResponse, error) {
-	log.Printf("Received: %v", in)
+func (s *server) ListPosts(_ context.Context, in *pb.ListParams) (*pb.PostListResponse, error) {
+	log.Printf("ListPosts Received: %v", in)
 	// return &pb.PostResponse{
 	// 	ID:        1,
 	// 	Title:     "Post #1",
@@ -65,6 +66,111 @@ func (s *server) ListPosts(_ context.Context, in *pb.Params) (*pb.PostListRespon
 	return &pb.PostListResponse{
 		Posts: result,
 	}, nil
+}
+
+func (s *server) GetPost(_ context.Context, in *pb.IdParam) (*pb.PostResponse, error) {
+	log.Printf("GetPost Received: %v", in)
+	// return &pb.PostResponse{
+	// 	ID:        1,
+	// 	Title:     "Post #1",
+	// 	Image:     "/image-1.jpg",
+	// 	Content:   "Content...",
+	// 	CreatedAt: "",
+	// 	UpdatedAt: "",
+	// }, nil
+
+	post, err := getPost(s.db, in.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.PostResponse{
+		ID:        post.ID,
+		Title:     post.Title,
+		Image:     post.Image.ValueOrZero(),
+		Content:   post.Content,
+		CreatedAt: post.CreatedAt.String(),
+		UpdatedAt: post.UpdatedAt.String(),
+	}, nil
+}
+
+func (s *server) CreatePost(_ context.Context, in *pb.PostCreateRequest) (*pb.PostResponse, error) {
+	log.Printf("CreatePost Received: %v", in)
+	// return &pb.PostResponse{
+	// 	ID:        1,
+	// 	Title:     "Post #1",
+	// 	Image:     "/image-1.jpg",
+	// 	Content:   "Content...",
+	// 	CreatedAt: "",
+	// 	UpdatedAt: "",
+	// }, nil
+
+	post, err := newPost(s.db, database.CreatePostParams{
+		Title:   in.Title,
+		Image:   null.NewString(in.Image, true),
+		Content: in.Content,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.PostResponse{
+		ID:        post.ID,
+		Title:     post.Title,
+		Image:     post.Image.ValueOrZero(),
+		Content:   post.Content,
+		CreatedAt: post.CreatedAt.String(),
+		UpdatedAt: post.UpdatedAt.String(),
+	}, nil
+}
+
+func (s *server) UpdatePost(_ context.Context, in *pb.PostUpdateRequest) (*pb.PostResponse, error) {
+	log.Printf("UpdatePost Received: %v", in)
+	// return &pb.PostResponse{
+	// 	ID:        1,
+	// 	Title:     "Post #1",
+	// 	Image:     "/image-1.jpg",
+	// 	Content:   "Content...",
+	// 	CreatedAt: "",
+	// 	UpdatedAt: "",
+	// }, nil
+
+	post, err := updatePost(s.db, database.UpdatePostParams{
+		ID:      in.ID,
+		Title:   in.Title,
+		Image:   null.NewString(in.Image, true),
+		Content: in.Content,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.PostResponse{
+		ID:        post.ID,
+		Title:     post.Title,
+		Image:     post.Image.ValueOrZero(),
+		Content:   post.Content,
+		CreatedAt: post.CreatedAt.String(),
+		UpdatedAt: post.UpdatedAt.String(),
+	}, nil
+}
+
+func (s *server) DeletePost(_ context.Context, in *pb.IdParam) (*pb.Empty, error) {
+	log.Printf("DeletePost Received: %v", in)
+	// return &pb.PostResponse{
+	// 	ID:        1,
+	// 	Title:     "Post #1",
+	// 	Image:     "/image-1.jpg",
+	// 	Content:   "Content...",
+	// 	CreatedAt: "",
+	// 	UpdatedAt: "",
+	// }, nil
+
+	if err := deletePostByID(s.db, in.Id); err != nil {
+		return nil, err
+	}
+
+	return &pb.Empty{}, nil
 }
 
 func connectDB() *sql.DB {
@@ -139,6 +245,73 @@ func getPosts(db *sql.DB) ([]database.Post, error) {
 	// log.Println(posts)
 
 	return posts, nil
+}
+
+func getPost(db *sql.DB, id int32) (database.Post, error) {
+	ctx := context.Background()
+
+	queries := database.New(db)
+
+	// get one post
+	post, err := queries.GetPost(ctx, id)
+	if err != nil {
+		return database.Post{}, err
+	}
+	// log.Println(post)
+
+	return post, nil
+}
+
+func newPost(db *sql.DB, data database.CreatePostParams) (database.Post, error) {
+	ctx := context.Background()
+
+	queries := database.New(db)
+
+	// create post
+	result, err := queries.CreatePost(ctx, data)
+	if err != nil {
+		return database.Post{}, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return database.Post{}, err
+	}
+
+	// fmt.Println("New post ID: ", id, int32(id))
+
+	return getPost(db, int32(id))
+}
+
+func updatePost(db *sql.DB, data database.UpdatePostParams) (database.Post, error) {
+	ctx := context.Background()
+
+	queries := database.New(db)
+
+	// update post
+	if err := queries.UpdatePost(ctx, data); err != nil {
+		return database.Post{}, err
+	}
+
+	return getPost(db, data.ID)
+}
+
+func deletePost(db *sql.DB, data database.Post) error {
+	ctx := context.Background()
+
+	queries := database.New(db)
+
+	// delete post
+	return queries.DeletePost(ctx, data.ID)
+}
+
+func deletePostByID(db *sql.DB, id int32) error {
+	ctx := context.Background()
+
+	queries := database.New(db)
+
+	// delete post
+	return queries.DeletePost(ctx, id)
 }
 
 type DataResultMeta struct {
